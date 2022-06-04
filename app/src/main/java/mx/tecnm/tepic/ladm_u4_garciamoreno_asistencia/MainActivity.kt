@@ -1,0 +1,303 @@
+package mx.tecnm.tepic.ladm_u4_garciamoreno_asistencia
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothServerSocket
+import android.bluetooth.BluetoothSocket
+import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import android.os.Handler
+import android.os.Message
+import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContentProviderCompat.requireContext
+import com.google.firebase.firestore.FirebaseFirestore
+import mx.tecnm.tepic.ladm_u4_garciamoreno_asistencia.databinding.ActivityMainBinding
+import java.io.InputStream
+import java.io.OutputStream
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
+import kotlin.collections.ArrayList
+
+class MainActivity : AppCompatActivity() {
+
+    lateinit var binding:ActivityMainBinding
+    lateinit var bluetoothAdapter: BluetoothAdapter
+
+    var dispositivos=ArrayList<BluetoothDevice>()
+    //lateinit var bluetoothD
+
+    val STATE_LISTENING=1
+    val STATE_CONNECTING=2
+    val STATE_CONNCETED=3
+    val STATE_CONNECTION_FAILED=4
+    val STATE_MESSAGE_RECEIVED=5
+
+    var noControl=ArrayList<String>()
+
+    val UUID=java.util.UUID.fromString("62ff97af-13e9-47db-a3ee-9bc1c4d3757b")
+    val NOMBRE = "ASISTENCIA"
+
+    var REQUEST_ENABLE_BLUETOOTH=1
+    val siPermiso=1
+
+    lateinit var transmision: Transmision
+
+    @SuppressLint("MissingPermission")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding= ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        bluetoothAdapter=BluetoothAdapter.getDefaultAdapter()
+
+        if (bluetoothAdapter?.isEnabled == false) {
+            //val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            /*
+                if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                    ActivityCompat.requestPermissions(this,arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT),siPermiso)
+                //return
+            }else {
+
+             */
+                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH)
+        }
+
+        binding.escuchar.setOnClickListener {
+            var server=Server(this)
+            server.start()
+        }
+        binding.buscar.setOnClickListener {
+            /*
+            var arr = dispositivosConectados()
+            binding.lista.adapter=ArrayAdapter(this,android.R.layout.simple_list_item_1,arr)
+
+             */
+        }
+        binding.guardar.setOnClickListener {
+
+            /*CREO QUE LOS NC SE DEBEN GUARDAR EN CUANTO SE RECIBAN
+
+            val fecha = SimpleDateFormat("dd-MM-yyyy").format(Date())
+            val hora = SimpleDateFormat("hh").format(Date())
+
+            val bd = FirebaseFirestore.getInstance()
+            val datos = hashMapOf(
+                "FECHA" to fecha,
+                "HORA" to hora,
+                "NOCONRTOL" to arrayListOf("123","321","456","654")
+            )
+            bd.collection("CLASE")
+                .add(datos)
+                .addOnSuccessListener {
+                    Toast.makeText(this,"ÉXITO AL INSERTAR",Toast.LENGTH_LONG)
+                        .show()
+                }
+                .addOnFailureListener {
+                    //NO SE PUDO
+                    AlertDialog.Builder(this)
+                        .setMessage(it.message)
+                        .show()
+                }
+        */
+        }
+        binding.consultar.setOnClickListener {
+            val ventana = Intent(this,MainActivity2::class.java)
+            startActivity(ventana)
+        }
+
+
+
+    }
+    val handler:Handler = object:Handler(){
+        override fun handleMessage(msg: Message) {
+            super.handleMessage(msg)
+            when(msg.what){
+                STATE_LISTENING->{
+
+                }
+                STATE_CONNECTING->{
+
+                }
+                STATE_CONNCETED->{
+                    Toast.makeText(this@MainActivity,"Conectado como servidor",Toast.LENGTH_LONG).show()
+                }
+                STATE_CONNECTION_FAILED->{
+                    AlertDialog.Builder(this@MainActivity)
+                        .setMessage("Error al conectar")
+                        .setPositiveButton("Aceptar",{d,i->})
+                        .show()
+                }
+                STATE_MESSAGE_RECEIVED->{
+                    var leerBuff:ByteArray = msg.obj as ByteArray
+                    var nc = String(leerBuff,0,msg.arg1)
+                    //noControl.add(nc)
+                    insertar(nc)
+                }
+            }
+        }
+    }
+    fun insertar(nc:String){
+        val bd = FirebaseFirestore.getInstance()
+        val datos = hashMapOf(
+            "FECHA" to SimpleDateFormat("dd-MM-yyyy").format(Date()).toString(),
+            "HORA" to SimpleDateFormat("hh").format(Date()).toString(),
+            "NOCONTROL" to nc
+        )
+        bd.collection("CLASE")
+            .add(datos)
+            .addOnSuccessListener {
+                //SI SE PUDO
+
+
+            }
+            .addOnFailureListener {
+                //NO SE PUDO
+                AlertDialog.Builder(this)
+                    .setMessage(it.message)
+                    .show()
+            }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if(requestCode==siPermiso){
+
+        }
+    }
+    @SuppressLint("MissingPermission")
+    fun dispositivosConectados():ArrayList<String>{
+        var dispositivos = ArrayList<String>()
+        /*
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(this,arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT),siPermiso)
+            //return
+        }else {
+
+         */
+            val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+
+            for(pD in pairedDevices!!){
+                dispositivos.add(pD.name)
+            }
+
+
+
+        return dispositivos
+
+    }
+
+
+    @SuppressLint("MissingPermission")
+    inner class Server(activity: MainActivity):Thread(){
+        private lateinit var serverSocket:BluetoothServerSocket
+        var activity=activity
+        init {
+            try{
+                this.serverSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NOMBRE, UUID)
+            }catch (e:Exception){}
+
+        }
+
+        override fun run() {
+            super.run()
+            var socket:BluetoothSocket?=null
+            while (socket==null){
+                try {
+
+                    socket = serverSocket.accept()
+
+                   /* runOnUiThread {
+                        Toast.makeText(activity,"Conectado como servidor",Toast.LENGTH_LONG).show()
+                    }*/
+                }catch (e:Exception){
+                    var msg = Message.obtain()
+                    msg.what=STATE_CONNECTION_FAILED
+                    handler.handleMessage(msg)
+                    break
+
+                }
+
+                if(socket!=null){
+                    var msg = Message.obtain()
+                    msg.what=STATE_CONNCETED
+                    handler.handleMessage(msg)
+                    transmision=Transmision(socket)
+                    transmision.start()
+                    break
+                }
+            }
+        }
+        fun cancelar(){
+            try{
+                serverSocket.close()
+            }catch (e:Exception){
+
+            }
+        }
+    }
+    inner class Transmision(var socket: BluetoothSocket):Thread(){
+        private val inputStream:InputStream = socket.inputStream
+        private val outputStream:OutputStream = socket.outputStream
+        private val buffer:ByteArray = ByteArray(1024)
+
+        override fun run() {
+            super.run()
+            var numBytes: Int
+
+            while (true) {
+                //Puede que no funcione
+                numBytes = try {
+                    inputStream.read(buffer)
+                }catch (e:Exception){
+                    break
+                }
+                handler.obtainMessage(STATE_MESSAGE_RECEIVED,numBytes,-1,buffer).sendToTarget()
+
+
+            }
+        }
+    }
+    /*
+    fun btListen():BluetoothServerSocket{
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            ActivityCompat.requestPermissions(this,arrayOf(android.Manifest.permission.BLUETOOTH_CONNECT),siPermiso)
+            return btListen()
+        }else
+            return bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord(NOMBRE,UUID)
+    }*/
+
+}

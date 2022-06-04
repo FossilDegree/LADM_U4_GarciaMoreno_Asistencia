@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1061683807232",
+    "project_id": "ladm-asistencia",
+    "storage_bucket": "ladm-asistencia.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1061683807232:android:538018e30ac24e10b984e5",
+        "android_client_info": {
+          "package_name": "mx.tecnm.tepic.ladm_u4_garciamoreno_asistencia"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1061683807232-er5kg58k0kj6q1ff0kr8d2cb6tbvhu2u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2yLJgPKesxRs3ismFIBerHlR3PYuKey4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1061683807232-er5kg58k0kj6q1ff0kr8d2cb6tbvhu2u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
