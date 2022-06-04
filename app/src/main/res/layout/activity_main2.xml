@@ -21,7 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/hora"
-        android:hint="Escribir hora"
+        android:hint="Hora (dos dígitos)"
         android:inputType="number"
         />
     <Button

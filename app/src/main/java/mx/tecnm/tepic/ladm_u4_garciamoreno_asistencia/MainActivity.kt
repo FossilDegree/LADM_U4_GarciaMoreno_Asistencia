@@ -80,40 +80,8 @@ class MainActivity : AppCompatActivity() {
             var server=Server(this)
             server.start()
         }
-        binding.buscar.setOnClickListener {
-            /*
-            var arr = dispositivosConectados()
-            binding.lista.adapter=ArrayAdapter(this,android.R.layout.simple_list_item_1,arr)
 
-             */
-        }
-        binding.guardar.setOnClickListener {
 
-            /*CREO QUE LOS NC SE DEBEN GUARDAR EN CUANTO SE RECIBAN
-
-            val fecha = SimpleDateFormat("dd-MM-yyyy").format(Date())
-            val hora = SimpleDateFormat("hh").format(Date())
-
-            val bd = FirebaseFirestore.getInstance()
-            val datos = hashMapOf(
-                "FECHA" to fecha,
-                "HORA" to hora,
-                "NOCONRTOL" to arrayListOf("123","321","456","654")
-            )
-            bd.collection("CLASE")
-                .add(datos)
-                .addOnSuccessListener {
-                    Toast.makeText(this,"ÉXITO AL INSERTAR",Toast.LENGTH_LONG)
-                        .show()
-                }
-                .addOnFailureListener {
-                    //NO SE PUDO
-                    AlertDialog.Builder(this)
-                        .setMessage(it.message)
-                        .show()
-                }
-        */
-        }
         binding.consultar.setOnClickListener {
             val ventana = Intent(this,MainActivity2::class.java)
             startActivity(ventana)

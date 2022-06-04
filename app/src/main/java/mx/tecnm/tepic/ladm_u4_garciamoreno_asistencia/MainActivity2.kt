@@ -95,7 +95,12 @@ class MainActivity2 : AppCompatActivity() {
         val newFragment = DatePickerFragment.newInstance(DatePickerDialog.OnDateSetListener { _, year, month, day ->
             // +1 because January is zero
             //val selectedDate = day.toString() + " / " + (month + 1) + " / " + year
-            val selectedDate = year.toString()+"-"+ (month + 1) +"-"+day
+            var m =""
+            if (month+1<10) m = "0"+(month+1) else m=""+(month+1)
+            var d = ""
+            if (day<10) d = "0"+day else d = ""+d
+
+            val selectedDate = year.toString()+"-"+ m +"-"+d
             binding.fecha.setText(selectedDate)
         })
 
