@@ -13,12 +13,14 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
+import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContentProviderCompat.requireContext
 import com.google.firebase.firestore.FirebaseFirestore
 import mx.tecnm.tepic.ladm_u4_garciamoreno_asistencia.databinding.ActivityMainBinding
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.text.SimpleDateFormat
@@ -196,22 +198,37 @@ class MainActivity : AppCompatActivity() {
 
                     socket = serverSocket.accept()
 
-                   /* runOnUiThread {
-                        Toast.makeText(activity,"Conectado como servidor",Toast.LENGTH_LONG).show()
-                    }*/
+                   activity.runOnUiThread {
+                       Toast.makeText(activity, "Conectado como servidor", Toast.LENGTH_LONG).show()
+                   }
                 }catch (e:Exception){
+                    /*
                     var msg = Message.obtain()
                     msg.what=STATE_CONNECTION_FAILED
                     handler.handleMessage(msg)
+
+                     */
+                         activity.runOnUiThread {
+                             AlertDialog.Builder(this@MainActivity)
+                                 .setMessage("Error al conectar")
+                                 .setPositiveButton("Aceptar",{d,i->})
+                                 .show()
+                         }
                     break
 
                 }
 
                 if(socket!=null){
+                    /*
                     var msg = Message.obtain()
                     msg.what=STATE_CONNCETED
                     handler.handleMessage(msg)
-                    transmision=Transmision(socket)
+                    */
+                     activity.runOnUiThread {
+                         Toast.makeText(this@MainActivity,"Conectado como servidor",Toast.LENGTH_LONG).show()
+                         binding.conexion.setText("Servidor")
+                     }
+                    transmision=Transmision(activity,socket)
                     transmision.start()
                     break
                 }
@@ -225,25 +242,37 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    inner class Transmision(var socket: BluetoothSocket):Thread(){
-        private val inputStream:InputStream = socket.inputStream
-        private val outputStream:OutputStream = socket.outputStream
-        private val buffer:ByteArray = ByteArray(1024)
+    inner class Transmision(private val activity: MainActivity, private val socket: BluetoothSocket):Thread(){
+        private val inputStream = this.socket.inputStream
+        private val outputStream = this.socket.outputStream
+        private var mmBuffer: ByteArray = ByteArray(1024)
 
         override fun run() {
-            super.run()
-            var numBytes: Int
-
-            while (true) {
-                //Puede que no funcione
-                numBytes = try {
-                    inputStream.read(buffer)
-                }catch (e:Exception){
-                    break
+            try {
+                val available = inputStream.available()
+                val bytes = ByteArray(available)
+                Log.i("server", "Reading")
+                try{
+                    inputStream.read(mmBuffer)
+                }catch(e: IOException){
+                    activity.runOnUiThread {
+                        AlertDialog.Builder(activity)
+                            .setTitle("Error")
+                            .setMessage("Error al tomar lista")
+                            .show()
+                    }
+                    return
                 }
-                handler.obtainMessage(STATE_MESSAGE_RECEIVED,numBytes,-1,buffer).sendToTarget()
-
-
+                val text = String(mmBuffer)
+                Log.i("server", "Message received")
+                Log.i("server", "MENSAJE: ${text}")
+                activity.appendText(text)
+            } catch (e: Exception) {
+                Log.e("client", "Cannot read data", e)
+            } finally {
+                inputStream.close()
+                outputStream.close()
+                socket.close()
             }
         }
     }
@@ -267,5 +296,9 @@ class MainActivity : AppCompatActivity() {
         }else
             return bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord(NOMBRE,UUID)
     }*/
-
+    fun appendText(text:String){
+        runOnUiThread {
+            insertar(text)
+        }
+    }
 }

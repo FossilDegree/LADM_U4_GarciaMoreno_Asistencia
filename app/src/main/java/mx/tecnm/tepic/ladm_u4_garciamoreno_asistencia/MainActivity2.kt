@@ -64,7 +64,7 @@ class MainActivity2 : AppCompatActivity() {
                     MODE_PRIVATE
                 )
             )
-            var cadena = "${binding.fecha.text.toString()},${binding.hora.text.toString()}\n"
+            var cadena = "Fecha:${binding.fecha.text.toString()},Hora:${binding.hora.text.toString()}\n"
             for (documento in value!!) {
                 cadena += documento.getString("NOCONTROL")
                 cadena += "\n"
@@ -100,7 +100,7 @@ class MainActivity2 : AppCompatActivity() {
             var d = ""
             if (day<10) d = "0"+day else d = ""+d
 
-            val selectedDate = year.toString()+"-"+ m +"-"+d
+            val selectedDate = d+"-"+m+"-"+year.toString()
             binding.fecha.setText(selectedDate)
         })
 
